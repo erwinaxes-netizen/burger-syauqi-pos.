@@ -24,6 +24,33 @@ jobs:
           gradle-version: '8.11.1'
 
       - name: Extract project
+      
+      - name: Fix Java and Kotlin targets
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          files = list(Path("project").rglob("app/build.gradle.kts"))
+          if not files:
+              raise SystemExit("app/build.gradle.kts tidak ditemukan")
+          p = files[0]
+          s = p.read_text()
+          if "sourceCompatibility = JavaVersion.VERSION_17" not in s:
+              s = s.replace(
+                  "android {",
+                  """android {
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+              kotlinOptions {
+                  jvmTarget = "17"
+              }""",
+                  1
+              )
+              p.write_text(s)
+          print("Java dan Kotlin target disamakan ke 17")
+          PY
+
         run: |
           mkdir project
           unzip -q *.zip -d project
